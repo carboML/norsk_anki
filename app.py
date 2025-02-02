@@ -7,6 +7,11 @@ import os
 from flask import Flask, request, redirect, url_for, session, flash, get_flashed_messages
 from jinja2 import Environment, DictLoader
 
+# Configura las rutas base
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+EXCEL_PATH = os.path.join(BASE_DIR, 'vocabulary_norwegian.xlsx')
+PROGRESS_PATH = os.path.join(BASE_DIR, 'progress.json')
+
 # ---------------------------
 # Clases del Sistema SRS
 # ---------------------------
@@ -38,8 +43,11 @@ class VocabularyCard:
 class SpacedRepetitionSystem:
     def __init__(self, filename):
         self.cards = []
-        self.progress_file = 'progress.json'
+        self.progress_file = PROGRESS_PATH
         self.load_data(filename)
+        # Asegúrate de que progress.json existe
+        if not os.path.exists(self.progress_file):
+            self.save_progress()  # Crea el archivo si no existe
         self.load_progress()
     
     def load_data(self, filename):
@@ -76,7 +84,10 @@ class SpacedRepetitionSystem:
             json.dump(progress, f)
     
     def get_due_cards(self):
-        return [card for card in self.cards if datetime.now() > card.due_date]
+        print(f"Total cards loaded: {len(self.cards)}")
+        due_cards = [card for card in self.cards if datetime.now() > card.due_date]
+        print(f"Due cards: {len(due_cards)}")
+        return due_cards
     
     def get_card_by_id(self, card_id):
         for card in self.cards:
@@ -102,8 +113,8 @@ def get_diff(correct, user):
 app = Flask(__name__)
 app.secret_key = "tu_clave_secreta_aqui"  # Necesaria para manejar la sesión
 
-# Inicializamos el sistema SRS (asegúrate de que el archivo Excel se encuentre en el directorio)
-srs = SpacedRepetitionSystem('vocabulary_norwegian.xlsx')
+# Modifica la inicialización
+srs = SpacedRepetitionSystem(EXCEL_PATH)
 
 # ---------------------------
 # Templates (almacenados en un diccionario)
